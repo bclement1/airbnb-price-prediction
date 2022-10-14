@@ -1,6 +1,8 @@
 # projetApprAuto
 
+## Projet du cours Apprentissage automatique
 
+Membres : Vivien Conti, Tristan Basler, Mathian Akanati, Clément Boulay
 
 ## Getting started
 
