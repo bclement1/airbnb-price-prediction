@@ -91,6 +91,8 @@ def remove_cols(X: pd.DataFrame):
     Remove columns that were proved not useful for the study.
     """
     df_identifiers = X[['Listing ID', 'Listing Name', 'Host ID', 'Host Name']]
+    # those columns are useful for identifying the samples
+
     X.drop(columns=[
         'City',
         'Country Code',
@@ -103,7 +105,6 @@ def remove_cols(X: pd.DataFrame):
         inplace=True
     ) # those columns only take a single value
     
-    # those columns are useful for identifying the samples
     return (X, df_identifiers)
 
 def one_hot_encoding(df: pd.DataFrame, categorical_features: list):
