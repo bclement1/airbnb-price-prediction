@@ -13,6 +13,8 @@ import sklearn
 assert sklearn.__version__ >= "0.20"
 
 from sklearn.model_selection import train_test_split
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
 
 # Numpy arrays are used to store training and test data.
 import numpy as np
@@ -24,6 +26,22 @@ import pandas as pd
 import warnings
 warnings.filterwarnings(action="ignore", message="^internal gelsd")
 
+# GLOBAL VARIABLES
+
+# List of the categorical features
+categorical_features = [
+    "Is Superhost",
+    "neighbourhood",
+    "Neighborhood Group",
+    "Is Exact Location",
+    "Property Type",
+    "Room Type",
+    "Instant Bookable",
+    "Business Travel Ready",
+    "Host Response Time"
+]
+
+# Functions
 def load_data():
     """
     Desc
@@ -48,8 +66,8 @@ def load_data():
                 )
     """    
     
-    print(df.head())
-    print(df.shape)
+    # print(df.head())
+    # print(df.shape)
     return df
 
 def split_data(df: pd.DataFrame, test_size=0.2, random_state=42):
@@ -62,6 +80,7 @@ def split_data(df: pd.DataFrame, test_size=0.2, random_state=42):
         X,
         y,
         test_size=test_size,
+        shuffle=True,
         random_state=random_state
     )
     
@@ -71,15 +90,15 @@ def remove_cols(X: pd.DataFrame):
     """
     Remove columns that were proved not useful for the study.
     """
-    df_identifiers = X[['Listing ID', 'Listing Name', 'Host ID']]
+    df_identifiers = X[['Listing ID', 'Listing Name', 'Host ID', 'Host Name']]
     X.drop(columns=[
-        'Listing Name', 
         'City',
         'Country Code',
         'Country',
         'Listing ID',
         'Listing Name',
-        'Host ID'
+        'Host ID',
+        'Host Name'
         ],
         inplace=True
     ) # those columns only take a single value
@@ -87,41 +106,41 @@ def remove_cols(X: pd.DataFrame):
     # those columns are useful for identifying the samples
     return (X, df_identifiers)
 
-def categorical_features_handler():
+def one_hot_encoding(df: pd.DataFrame, categorical_features: list):
     """
     Apply one-hot encoding 
     """
-    return 0
+    # We get the list of the numerical features.
+    df_categorical = df[categorical_features]
+    df.drop(columns=categorical_features, inplace=True)
+    print(df_categorical.head())
+    # Apply pandas's get_dummies function on the categorical features
+    df_categorical_encoded = pd.get_dummies(df_categorical)
+    print(df_categorical_encoded.head())
+    
+    df = pd.concat([df, df_categorical_encoded], axis=1)
+    return df
 
 def numerical_features_scaler():
     return 0
 
-def preprocessing(X: pd.DataFrame):
+def preprocessing(df: pd.DataFrame):
     """
     Function applying all the previous preprocessing functions.
     """
-    (X_clean, df_identifiers) = remove_cols(X)
-    
-    return (X_clean, df_identifiers)
+    (df_clean, df_identifiers) = remove_cols(df)
+    df_encoded = one_hot_encoding(df_clean, categorical_features=categorical_features)
+
+    return (df_encoded, df_identifiers)
 
 
 if __name__ == "__main__":
     df = load_data() # full data
     # print(df.shape)
-    (X_train, X_test, y_train, y_test) = split_data(df)
     # print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
-    X_train, df_train_identifiers = preprocessing(X_train)
-    X_test, df_test_identifiers = preprocessing(X_test)
+    df_clean, df_identifiers = preprocessing(df)
+
+    (X_train, X_test, y_train, y_test) = split_data(df_clean)
     # print(X_train.shape)
     # print(X_test.shape)
-    
-    print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
-
-"""
-def scaler(method):
-    methods_available = ["MinMAx", "StandardScaler"]
-    assert(method in methods, message="")
-    
-    gerer method 
-        
-"""
+    # print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
