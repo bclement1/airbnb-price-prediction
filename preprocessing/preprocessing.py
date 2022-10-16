@@ -23,6 +23,8 @@ import pandas as pd
 # Ignore useless warnings (see SciPy issue #5998).
 import warnings
 
+import sklearn as skl
+
 warnings.filterwarnings(action="ignore", message="^internal gelsd")
 
 datetime_columns = ["Host Since", "First Review", "Last Review"]
@@ -37,6 +39,7 @@ categorical_columns = [
     "Business Travel Ready",
     "Host Response Time",
 ]
+
 numerical_features = [
     "Postal Code",
     "Accomodates",
@@ -69,16 +72,15 @@ def load_data():
     )
 
     # Direct Processing
+    df_data.replace('*',np.nan,inplace=True)
     for col in datetime_columns:
         df_data[col] = pd.to_datetime(df_data[col])
     df_data["Host Response Rate"] = df_data["Host Response Rate"].apply(treatment)
     df_data[numerical_features] = df_data[numerical_features].applymap(float)
-    print(df_data.head())
-    print(df_data.shape)
-    return (training_data,)
+    return (df_data)
 
 
-def split_data(df: pd.DataFrame):
+def extract_y_data(df: pd.DataFrame):
     """
     Desc
     """
@@ -97,10 +99,11 @@ def remove_cols(df: pd.DataFrame):
             "Listing Name",
             "City",
             "Country Code",
-            "Code",
+            "Country",
             "Listing ID",
             "Listing Name",
             "Host ID",
+            "Host Name",
         ],
         inplace=True,
     )  # those columns only take a single value
@@ -119,22 +122,33 @@ def numerical_features_scaler():
 
 def LabelEncoder_df(df, categorical_columns=categorical_columns):
     for col in categorical_columns:
-        le = preprocessing.LabelEncoder()
+        le = skl.preprocessing.LabelEncoder()
         le.fit(df[col])
         df[col] = le.transform(df[col])
+    return df
 
+def split_data(X,y):
+    return skl.model_selection.train_test_split(X, y, test_size=0.2, random_state=42)
 
-def preprocessing(df: pd.DataFrame):
+def preprocessing(df: pd.DataFrame,
+                  encoder_method = 'LabelEncoder'):
     """
     Function applying all the previous preprocessing functions.
     """
-    (X, y) = split_data(df)
-    (X, df_identifiers) = remove_cols(X)
-    return (X, y, df_identifiers)
+    (data, df_identifiers) = remove_cols(df)
+    X,y=extract_y_data(data)    
+    if encoder_method == 'LabelEncoder':
+        X=LabelEncoder_df(X,categorical_columns)
+    (X_train,y_train,X_test,y_test)=split_data(X,y)
+    return (X_train,y_train,
+            X_test,y_test,
+            df_identifiers)
 
 
 if __name__ == "__main__":
-    training_data, test_data = load_data()
-    (X_train, y_train) = split_data(training_data)
-    (X_test, y_test) = split_data(test_data)
-    print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
+    data = load_data()
+    (X_train,y_train,
+            X_test,y_test,
+            df_identifiers) = preprocessing(data)
+    print(X_train.shape,y_train.shape,
+            X_test.shape,y_test.shape)
