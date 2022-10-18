@@ -26,6 +26,8 @@ import warnings
 import sklearn as skl
 from sklearn.model_selection import train_test_split
 
+import git
+
 warnings.filterwarnings(action="ignore", message="^internal gelsd")
 
 datetime_columns = ["Host Since", "First Review", "Last Review"]
@@ -60,6 +62,12 @@ def treatment(x):
         return float(x) / 100
 
 
+def get_git_root(path):
+    git_repo = git.Repo(path, search_parent_directories=True)
+    git_root = git_repo.git.rev_parse("--show-toplevel")
+    return git_root
+
+
 def load_data():
     """
     Desc
@@ -67,7 +75,9 @@ def load_data():
     DATA_FOLDER = "data"
     PATH_CSV = "train_airbnb_berlin.csv"
     # Load training data
-    df_data = pd.read_csv(os.path.join(os.getcwd(), DATA_FOLDER, PATH_CSV))
+    df_data = pd.read_csv(
+        os.path.join(get_git_root(os.getcwd()), DATA_FOLDER, PATH_CSV)
+    )
 
     # Direct Processing
     df_data.replace("*", np.nan, inplace=True)
