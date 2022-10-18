@@ -85,6 +85,9 @@ def load_data():
         df_data[col] = pd.to_datetime(df_data[col])
     df_data["Host Response Rate"] = df_data["Host Response Rate"].apply(treatment)
     df_data[numerical_features] = df_data[numerical_features].applymap(float)
+    
+    na_index = df_data[df_data["Price"].isna()].index
+    df_data.drop(na_index, inplace=True, errors="ignore")
     return df_data
 
 
@@ -127,6 +130,17 @@ def categorical_features_handler():
 def numerical_features_scaler():
     return 0
 
+def fill_na_mean(df):
+    for col in df:
+        mean=df[col].mean()
+        df[col][df[col].isna()]=mean
+    return df
+
+def fill_na_median(df):
+    for col in df:
+        med=df[col].median()
+        df[col][df[col].isna()]=med
+    return df
 
 def LabelEncoder_df(df, categorical_columns=categorical_columns):
     for col in categorical_columns:
@@ -135,12 +149,21 @@ def LabelEncoder_df(df, categorical_columns=categorical_columns):
         df[col] = le.transform(df[col])
     return df
 
-
+def datetime_to3columns(df,datetime_columns=datetime_columns):
+    for col in datetime_columns:
+        df[col + "_year"] = df[col].apply(lambda x: x.year)
+        df[col + "_month"] = df[col].apply(lambda x: x.month)
+        df[col + "_day"] = df[col].apply(lambda x: x.day)
+    df.drop(columns=datetime_columns, inplace=True)
+    
 def split_data(X, y):
     return train_test_split(X, y, test_size=0.2, random_state=42)
 
 
-def preprocessing(df: pd.DataFrame, encoder_method="LabelEncoder"):
+def preprocessing(df: pd.DataFrame, 
+                  encoder_method=None,
+                  fill_na_method=None,
+                  datetime_treatment=None):
     """
     Function applying all the previous preprocessing functions.
     """
@@ -148,5 +171,14 @@ def preprocessing(df: pd.DataFrame, encoder_method="LabelEncoder"):
     X, y = extract_y_data(data)
     if encoder_method == "LabelEncoder":
         X = LabelEncoder_df(X, categorical_columns)
+        
+    if fill_na_method == "Mean":
+        X = fill_na_mean(X)
+    elif fill_na_method == "Median":
+        X = fill_na_median(X)
+        
+    if datetime_treatment=='Linearization':
+        datetime_to3columns(X)
+    
     (X_train, X_test, y_train, y_test) = split_data(X, y)
     return (X_train, y_train, X_test, y_test, df_identifiers)
