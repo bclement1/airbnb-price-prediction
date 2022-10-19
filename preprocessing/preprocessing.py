@@ -19,6 +19,16 @@ from sklearn.model_selection import train_test_split
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
 
+#Scaler from sklearn
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MaxAbsScaler
+from sklearn.preprocessing import RobustScaler
+from sklearn.preprocessing import Normalizer
+from sklearn.preprocessing import QuantileTransformer
+from sklearn.preprocessing import PowerTransformer
+
+
 # Numpy arrays are used to store training and test data.
 import numpy as np
 
@@ -144,8 +154,41 @@ def one_hot_encoding(df: pd.DataFrame, categorical_features: list):
     return df
 
 
-def numerical_features_scaler():
-    return 0
+def numerical_features_scaler(X_train: pd.DataFrame, scale_method: str):
+    """
+    Apply a scale on the training features depends on the scale method choose.
+    """
+
+    method_to_scaler = {"StandardScaler": StandardScaler(), "MinMaxScaler": MinMaxScaler(), "MaxAbsScaler": MaxAbsScaler(), "RobustScaler": RobustScaler(), "Normalizer": Normalizer(), "QuantileTransformer": QuantileTransformer(), "PowerTransformer": PowerTransformer()}
+
+    if scale_method not in method_to_scaler.keys():
+        raise Exception("This scaling method is not available. Please choose among [StandardScaler, MinMaxScaler, MaxAbsScaler, RobustScaler, Normalizer, QuantileTransformer, PowerTransformer]")
+
+    scaler = method_to_scaler[scale_method]
+
+    X_numerical = X_train.filter(numerical_features, axis=1)
+    X_numerical = scaler.fit_transform(X_numerical)
+
+    X_train = pd.concat([X_numerical, X_train[[datetime_columns]+[categorical_columns]]], axis=1)
+    
+    return X_train
+
+def target_feature_scaler(y_train: pd.DataFrame, scale_method: str):
+    """
+    Apply a scale on the tarining target data depends on the scale method choose.
+    """
+
+    method_to_scaler = {"StandardScaler": StandardScaler(), "MinMaxScaler": MinMaxScaler(), "MaxAbsScaler": MaxAbsScaler(), "RobustScaler": RobustScaler(), "Normalizer": Normalizer(), "QuantileTransformer": QuantileTransformer(), "PowerTransformer": PowerTransformer()}
+
+    if scale_method not in method_to_scaler.keys():
+        raise Exception("This scaling method is not available. Please choose among [StandardScaler, MinMaxScaler, MaxAbsScaler, RobustScaler, Normalizer, QuantileTransformer, PowerTransformer]")
+
+    scaler = method_to_scaler[scale_method]
+    y_train = scaler.fit_transform(y_train)
+
+    return y_train
+
+
 
 def fill_na_mean(df):
     for col in df:
@@ -198,4 +241,8 @@ def preprocessing(df: pd.DataFrame,
         datetime_to3columns(X)
     
     (X_train, X_test, y_train, y_test) = split_data(X, y)
+    X_train = numerical_features_scaler(X_train, 'method')
+    y_train = target_feature_scaler(y_train, 'method')
+
     return (X_train, y_train, X_test, y_test, df_identifiers)
+
