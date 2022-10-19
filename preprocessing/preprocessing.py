@@ -109,16 +109,14 @@ def remove_cols(X: pd.DataFrame):
 
 def one_hot_encoding(df: pd.DataFrame, categorical_features: list):
     """
-    Apply one-hot encoding 
+    Apply one-hot encoding for categorical nominal features.
     """
     # We get the list of the numerical features.
     df_categorical = df[categorical_features]
     df.drop(columns=categorical_features, inplace=True)
-    print(df_categorical.head())
     # Apply pandas's get_dummies function on the categorical features
     df_categorical_encoded = pd.get_dummies(df_categorical)
-    print(df_categorical_encoded.head())
-    
+    # Put everything back in a single DataFrame
     df = pd.concat([df, df_categorical_encoded], axis=1)
     return df
 
@@ -129,7 +127,9 @@ def preprocessing(df: pd.DataFrame):
     """
     Function applying all the previous preprocessing functions.
     """
+    # Remove useless features and put identifiers features aside
     (df_clean, df_identifiers) = remove_cols(df)
+    # Encode the nominal categorical features using One-Hot Encoding
     df_encoded = one_hot_encoding(df_clean, categorical_features=categorical_features)
 
     return (df_encoded, df_identifiers)
@@ -141,6 +141,7 @@ if __name__ == "__main__":
     # print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
     df_clean, df_identifiers = preprocessing(df)
 
+    # Last, we split the preprocessed data into a train and test set
     (X_train, X_test, y_train, y_test) = split_data(df_clean)
     # print(X_train.shape)
     # print(X_test.shape)
