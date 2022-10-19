@@ -5,11 +5,14 @@ Preprocessing.py
 # Python ≥3.5 is required
 from audioop import minmax
 import sys
+from tkinter import Y
+
 assert sys.version_info >= (3, 5)
 import os
 
 # Scikit-Learn ≥0.20 is required
 import sklearn
+
 assert sklearn.__version__ >= "0.20"
 
 from sklearn.model_selection import train_test_split
@@ -24,12 +27,21 @@ import pandas as pd
 
 # Ignore useless warnings (see SciPy issue #5998).
 import warnings
+
+import sklearn as skl
+from sklearn.model_selection import train_test_split
+
+import git
+
 warnings.filterwarnings(action="ignore", message="^internal gelsd")
 
-# GLOBAL VARIABLES
-
-# List of the categorical features
-categorical_features = [
+# Global variables
+datetime_columns = [
+    "Host Since",
+    "First Review",
+    "Last Review"
+]
+categorical_columns = [
     "Is Superhost",
     "neighbourhood",
     "Neighborhood Group",
@@ -38,53 +50,64 @@ categorical_features = [
     "Room Type",
     "Instant Bookable",
     "Business Travel Ready",
-    "Host Response Time"
+    "Host Response Time",
 ]
 
-# Functions
+numerical_features = [
+    "Postal Code",
+    "Accomodates",
+    "Bathrooms",
+    "Beds",
+    "Bedrooms",
+    "Guests Included",
+    "Min Nights",
+]
+
+
+def treatment(x):
+    if type(x) == float:
+        return x
+    else:
+        x = x.replace("%", "")
+        return float(x) / 100
+
+
+def get_git_root(path):
+    git_repo = git.Repo(path, search_parent_directories=True)
+    git_root = git_repo.git.rev_parse("--show-toplevel")
+    return git_root
+
+
 def load_data():
     """
     Desc
     """
-    DATA_FOLDER = "data/"
-    TRAINING_CSV = "train_airbnb_berlin.csv"
-    TEST_CSV = "test_airbnb_berlin.csv"
-
+    DATA_FOLDER = "data"
+    PATH_CSV = "train_airbnb_berlin.csv"
     # Load training data
-    df = pd.read_csv(os.path.join(
-                    os.path.dirname(os.getcwd()),
-                    DATA_FOLDER,
-                    TRAINING_CSV
-                    )
-                )
-    """
-    test_data = pd.read_csv(os.path.join(
-                    os.path.dirname(os.getcwd()),
-                    DATA_FOLDER,
-                    TEST_CSV
-                    )
-                )
-    """    
-    
-    # print(df.head())
-    # print(df.shape)
-    return df
+    df_data = pd.read_csv(
+        os.path.join(get_git_root(os.getcwd()), DATA_FOLDER, PATH_CSV)
+    )
 
-def split_data(df: pd.DataFrame, test_size=0.2, random_state=42):
+    # Direct Processing
+    df_data.replace("*", np.nan, inplace=True)
+    for col in datetime_columns:
+        df_data[col] = pd.to_datetime(df_data[col])
+    df_data["Host Response Rate"] = df_data["Host Response Rate"].apply(treatment)
+    df_data[numerical_features] = df_data[numerical_features].applymap(float)
+    
+    na_index = df_data[df_data["Price"].isna()].index
+    df_data.drop(na_index, inplace=True, errors="ignore")
+    return df_data
+
+
+def extract_y_data(df: pd.DataFrame, test_size=0.2, random_state=42):
     """
     Desc
     """
     y = df["Price"]
     X = df.drop(columns="Price")
-    X_train, y_train, X_test, y_test = train_test_split(
-        X,
-        y,
-        test_size=test_size,
-        shuffle=True,
-        random_state=random_state
-    )
-    
-    return (X_train, y_train, X_test, y_test)
+    return (X, y)
 
 def remove_cols(X: pd.DataFrame):
     """
@@ -120,29 +143,59 @@ def one_hot_encoding(df: pd.DataFrame, categorical_features: list):
     df = pd.concat([df, df_categorical_encoded], axis=1)
     return df
 
+
 def numerical_features_scaler():
     return 0
 
-def preprocessing(df: pd.DataFrame):
+def fill_na_mean(df):
+    for col in df:
+        mean=df[col].mean()
+        df[col][df[col].isna()]=mean
+    return df
+
+def fill_na_median(df):
+    for col in df:
+        med=df[col].median()
+        df[col][df[col].isna()]=med
+    return df
+
+def LabelEncoder_df(df, categorical_columns=categorical_columns):
+    for col in categorical_columns:
+        le = skl.preprocessing.LabelEncoder()
+        le.fit(df[col])
+        df[col] = le.transform(df[col])
+    return df
+
+def datetime_to3columns(df,datetime_columns=datetime_columns):
+    for col in datetime_columns:
+        df[col + "_year"] = df[col].apply(lambda x: x.year)
+        df[col + "_month"] = df[col].apply(lambda x: x.month)
+        df[col + "_day"] = df[col].apply(lambda x: x.day)
+    df.drop(columns=datetime_columns, inplace=True)
+    
+def split_data(X, y):
+    return train_test_split(X, y, test_size=0.2, random_state=42)
+
+
+def preprocessing(df: pd.DataFrame, 
+                  encoder_method=None,
+                  fill_na_method=None,
+                  datetime_treatment=None):
     """
     Function applying all the previous preprocessing functions.
     """
-    # Remove useless features and put identifiers features aside
-    (df_clean, df_identifiers) = remove_cols(df)
-    # Encode the nominal categorical features using One-Hot Encoding
-    df_encoded = one_hot_encoding(df_clean, categorical_features=categorical_features)
-
-    return (df_encoded, df_identifiers)
-
-
-if __name__ == "__main__":
-    df = load_data() # full data
-    # print(df.shape)
-    # print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
-    df_clean, df_identifiers = preprocessing(df)
-
-    # Last, we split the preprocessed data into a train and test set
-    (X_train, X_test, y_train, y_test) = split_data(df_clean)
-    # print(X_train.shape)
-    # print(X_test.shape)
-    # print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
+    (data, df_identifiers) = remove_cols(df)
+    X, y = extract_y_data(data)
+    if encoder_method == "LabelEncoder":
+        X = LabelEncoder_df(X, categorical_columns)
+        
+    if fill_na_method == "Mean":
+        X = fill_na_mean(X)
+    elif fill_na_method == "Median":
+        X = fill_na_median(X)
+        
+    if datetime_treatment=='Linearization':
+        datetime_to3columns(X)
+    
+    (X_train, X_test, y_train, y_test) = split_data(X, y)
+    return (X_train, y_train, X_test, y_test, df_identifiers)

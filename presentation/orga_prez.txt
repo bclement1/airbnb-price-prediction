@@ -1,0 +1,18 @@
+Sommaire :
+
+- Abstract
+- Exploration des données
+- Preprocessing
+- Feature selection and feature engineering
+- Dimension reduction
+	- PCA
+	- Shrinkage methods (Lasso, Ridge, ElasticNet)
+- Supervised Learning Techniques
+	- Linear regression
+	- SVM-Reg
+	- Regression trees
+	- Bagging (SVR)
+	- Random forests (bagging avec Reg Trees)
+	- Boosting/AdaBoost, L2-Boosted Trees, XGBoost
+	- Neural networks (Dense network)
+
