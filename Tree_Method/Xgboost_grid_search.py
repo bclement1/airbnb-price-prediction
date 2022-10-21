@@ -31,7 +31,7 @@ ENCODER_METHOD = "LabelEncoder"
 DATEITME_TREATMENT = 'Linearization'
 
 # Save Folder initialization
-save_file_path = "../logs/xgboost/{}/".format(
+save_file_path = "../logs/xgboost_grid_search/{}/".format(
     datetime.datetime.today().strftime("%Y-%m-%d_%H-%M-%S")
 )
 os.makedirs(save_file_path, exist_ok=True)

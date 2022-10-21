@@ -169,6 +169,7 @@ def preprocessing(df: pd.DataFrame,
     """
     (data, df_identifiers) = remove_cols(df)
     X, y = extract_y_data(data)
+    
     if encoder_method == "LabelEncoder":
         X = LabelEncoder_df(X, categorical_columns)
         
