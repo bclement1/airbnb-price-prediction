@@ -17,7 +17,8 @@ assert sklearn.__version__ >= "0.20"
 # Import some Transformers from sklearn, as well as function useful for handling data.
 from sklearn.model_selection import train_test_split
 from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder, LabelEncoder, OrdinalEncoder
+from sklearn.preprocessing import OneHotEncoder, LabelEncoder, OrdinalEncoder, StandardScaler, MinMaxScaler
+
 
 # Numpy arrays are used to store training and test data.
 import numpy as np
@@ -81,7 +82,9 @@ NUMERICAL_FEATURES = [
     "Communication Rating",
     "Location Rating",
     "Value Rating",
-    "Host Response Rate"
+    "Host Response Rate",
+    "Latitude",
+    "Longitude"
 ]
 
 PERCENTAGE_COLUMNS = [
@@ -126,6 +129,12 @@ class UnalignedDataFramesError(Exception):
     pass
 
 class UnspecifiedMappingError(Exception):
+    """
+    Desc.
+    """
+    pass
+
+class UnknownScalingMethodError(Exception):
     """
     Desc.
     """
@@ -193,6 +202,7 @@ def drop_univalued_columns(df: pd.DataFrame):
     Desc.
     """
     df.drop(columns=UNIVALUED_COLUMNS, inplace=True)
+    df.drop(columns=["Square Feet"], inplace=True) # this columns is multivalued but has got too many missing data
 
 
 def extract_identifiers(df: pd.DataFrame):
@@ -223,7 +233,7 @@ def fill_na_mean(X: pd.DataFrame):
             mean = X[col].mean()
         except TypeError: # column is encoded using strings
             mean = np.mean(X[col].apply(lambda x: float(x)))
-        X[col].apply(lambda x: mean if(pd.isna(x)) else x)
+        X[col] = X[col].apply(lambda x: mean if(pd.isna(x)) else x)
     return X
 
 
@@ -247,16 +257,31 @@ def fill_categorical_features(X: pd.DataFrame):
     for col in CATEGORICAL_COLUMNS:
         # apply custom treatments depending on columns
         # TO DO
-        X[col] = X[col].apply(lambda x: np.argmax(X[col].value_counts()) if pd.isna(x) else x)
+        most_frequent_value = X[col].mode()[0]
+        X[col] = X[col].apply(lambda x: most_frequent_value if pd.isna(x) else x)
+    for col in HYBRID_FEATURES:
+        most_frequent_value = X[col].mode()[0]
+        X[col] = X[col].apply(lambda x: most_frequent_value if pd.isna(x) else x)
 
     return X
 
 
-def scale_numerical_features(X: pd.DataFrame):
+def scale_numerical_features(X: pd.DataFrame, method="minmax"):
     """
-    TO DO.
+    Desc.
     """
-    return 0
+    if method not in ["standard", "minmax"]:
+        raise UnknownScalingMethodError
+    
+    if method == "standard":
+        scaler = StandardScaler()
+    elif method == "minmax":
+        scaler = MinMaxScaler()
+
+    # scale the features
+    X[NUMERICAL_FEATURES] = scaler.fit_transform(X[NUMERICAL_FEATURES])
+
+    return X
 
 def apply_one_hot_encoding(X: pd.DataFrame, full=False):
     """
@@ -432,7 +457,7 @@ def preprocessing(df: pd.DataFrame,
     X = fill_categorical_features(X)
 
     # scale numerical features
-    #X = scale_numerical_features(X) # UNCOMMENT ONCE DONE
+    X = scale_numerical_features(X)
     
     # now, we apply encoding to the categorical features
     if encoder_method not in ["classical", "FullLabelEncoder", "FullOneHotEncoder"]:
@@ -457,21 +482,26 @@ def preprocessing(df: pd.DataFrame,
 
     return (X_train, y_train, X_test, y_test, df_identifiers)
 
-
-if __name__ == "__main__":
+def run_preprocessing(get_overview=False, store_copy=False):
+    """
+    Wrapper for the preprocessing part.
+    """
     # load the data
     df = load_data()
     # apply the preprocessing
     (X_train, X_test, y_train, y_test, df_identifiers) = preprocessing(df)
-    # ensure everything went fine
-    print(X_train.head())
-    # dump it into a csv for further inspection
-    X_train.to_csv('X_train_processed.csv', header=True, columns=X_train.columns)
+    if get_overview:
+        # ensure everything went fine
+        print("X_train:\n", X_train.head(), "\n")
+        print("X_test:\n", X_test.head(), "\n")
+        print("y_train:\n", y_train.head(), "\n")
+        print("y_test:\n", y_test.head(), "\n")
+    if store_copy:
+        # dump it into a csv for further investigation
+        X_train.to_csv('X_train_processed.csv', header=True, columns=X_train.columns)
 
-"""
-TO DO:
-Remove NaN from all columns using Imputers
-Check is binary cols like 'Instant bookable' can be encoded using O:1 only instead of using 2 columns
-Scale features!!!
-Check again all cols before PCA
-"""
+    return (X_train, X_test, y_train, y_test, df_identifiers)
+
+
+if __name__ == "__main__":
+    run_preprocessing()
