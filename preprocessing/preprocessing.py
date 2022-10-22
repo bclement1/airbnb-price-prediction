@@ -484,7 +484,7 @@ def preprocessing(df: pd.DataFrame,
 
 def run_preprocessing(get_overview=False, store_copy=False):
     """
-    Wrapper for the preprocessing part.
+    Automation for the preprocessing part.
     """
     # load the data
     df = load_data()
