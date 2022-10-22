@@ -241,8 +241,11 @@ def preprocessing(df: pd.DataFrame,
         datetime_to3columns(X)
     
     (X_train, X_test, y_train, y_test) = split_data(X, y)
+    
     X_train = numerical_features_scaler(X_train, 'method')
     y_train = target_feature_scaler(y_train, 'method')
 
     return (X_train, y_train, X_test, y_test, df_identifiers)
+
+
 
