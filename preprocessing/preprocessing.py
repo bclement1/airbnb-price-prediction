@@ -168,12 +168,27 @@ def process_datetime_columns(df: pd.DataFrame):
 
 def datetime_to3columns(df: pd.DataFrame):
     """
-    Desc.
+    Desc. + handle NaN value in each new column
     """
     for col in DATETIME_COLUMNS:
         df[col + "_year"] = df[col].apply(lambda x: x.year)
+        # handle missing values in year column
+        df[col + "_year"] = df[col + "_year"].apply(
+            lambda x: int(df[col + "_year"].mean()) if pd.isna(x) else x
+        )
+
         df[col + "_month"] = df[col].apply(lambda x: x.month)
+        # handle missing values in year column
+        df[col + "_month"] = df[col + "_month"].apply(
+            lambda x: int(df[col + "_month"].mean()) if pd.isna(x) else x
+        )
+
         df[col + "_day"] = df[col].apply(lambda x: x.day)
+        # handle missing values in year column
+        df[col + "_day"] = df[col + "_day"].apply(
+            lambda x: int(df[col + "_day"].mean()) if pd.isna(x) else x
+        )
+
     df.drop(columns=DATETIME_COLUMNS, inplace=True)
 
 
@@ -433,7 +448,7 @@ def preprocessing(df: pd.DataFrame,
     # then, convert columns involving dates to the proper format
     df = process_datetime_columns(df)
 
-    # and split each date-based column into 3 components (day, month, year)
+    # and split each date-based column into 3 components (day, month, year) + handle NaNs
     datetime_to3columns(df)
 
     # apply a special treatment to the host_response_rate column, which involves percentages
@@ -482,26 +497,20 @@ def preprocessing(df: pd.DataFrame,
 
     return (X_train, y_train, X_test, y_test, df_identifiers)
 
-def run_preprocessing(get_overview=False, store_copy=False):
+def run_preprocessing(store_copy=False):
     """
     Automation for the preprocessing part.
     """
     # load the data
     df = load_data()
     # apply the preprocessing
-    (X_train, X_test, y_train, y_test, df_identifiers) = preprocessing(df)
-    if get_overview:
-        # ensure everything went fine
-        print("X_train:\n", X_train.head(), "\n")
-        print("X_test:\n", X_test.head(), "\n")
-        print("y_train:\n", y_train.head(), "\n")
-        print("y_test:\n", y_test.head(), "\n")
+    (X_train, y_train, X_test, y_test, df_identifiers) = preprocessing(df)
     if store_copy:
         # dump it into a csv for further investigation
         X_train.to_csv('X_train_processed.csv', header=True, columns=X_train.columns)
-
-    return (X_train, X_test, y_train, y_test, df_identifiers)
+    
+    return (X_train, y_train, X_test, y_test, df_identifiers)
 
 
 if __name__ == "__main__":
-    run_preprocessing()
+    (X_train, y_train, X_test, y_test, df_identifiers) = run_preprocessing(store_copy=True)
