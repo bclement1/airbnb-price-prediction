@@ -84,15 +84,12 @@ NUMERICAL_FEATURES = [
     "Value Rating",
     "Host Response Rate",
     "Latitude",
-    "Longitude"
+    "Longitude",
+    "Postal Code"
 ]
 
 PERCENTAGE_COLUMNS = [
     "Host Response Rate"
-]
-
-HYBRID_FEATURES = [ # features that are neither really numerical nor really categorical
-    "Postal Code"
 ]
 
 UNIVALUED_COLUMNS = [ # these columns take only a single, therefore are not useful for predicting the target
@@ -174,19 +171,37 @@ def datetime_to3columns(df: pd.DataFrame):
         df[col + "_year"] = df[col].apply(lambda x: x.year)
         # handle missing values in year column
         df[col + "_year"] = df[col + "_year"].apply(
-            lambda x: int(df[col + "_year"].mean()) if pd.isna(x) else x
+            lambda x: int(df[col + "_year"].mean()) if pd.isna(x) else int(x)
+        )
+        # last, scale the new column so that it is ready for models
+        df[col + "_year"] = (
+            df[col + "_year"] - df[col + "_year"].min()
+        ) / (
+            df[col + "_year"].max() - df[col + "_year"].min()
         )
 
         df[col + "_month"] = df[col].apply(lambda x: x.month)
         # handle missing values in year column
         df[col + "_month"] = df[col + "_month"].apply(
-            lambda x: int(df[col + "_month"].mean()) if pd.isna(x) else x
+            lambda x: int(df[col + "_month"].mean()) if pd.isna(x) else int(x)
+        )
+        # last, scale the new column so that it is ready for models
+        df[col + "_month"] = (
+            df[col + "_month"] - df[col + "_month"].min()
+        ) / (
+            df[col + "_month"].max() - df[col + "_month"].min()
         )
 
         df[col + "_day"] = df[col].apply(lambda x: x.day)
         # handle missing values in year column
         df[col + "_day"] = df[col + "_day"].apply(
-            lambda x: int(df[col + "_day"].mean()) if pd.isna(x) else x
+            lambda x: int(df[col + "_day"].mean()) if pd.isna(x) else int(x)
+        )
+        # last, scale the new column so that it is ready for models
+        df[col + "_day"] = (
+            df[col + "_day"] - df[col + "_day"].min()
+        ) / (
+            df[col + "_day"].max() - df[col + "_day"].min()
         )
 
     df.drop(columns=DATETIME_COLUMNS, inplace=True)
@@ -274,9 +289,11 @@ def fill_categorical_features(X: pd.DataFrame):
         # TO DO
         most_frequent_value = X[col].mode()[0]
         X[col] = X[col].apply(lambda x: most_frequent_value if pd.isna(x) else x)
+    """
     for col in HYBRID_FEATURES:
         most_frequent_value = X[col].mode()[0]
         X[col] = X[col].apply(lambda x: most_frequent_value if pd.isna(x) else x)
+    """
 
     return X
 
