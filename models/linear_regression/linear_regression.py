@@ -41,6 +41,7 @@ def run_linear_regression(learning_rate=0.01, alpha=1, penalty='l2', verbose=Fal
     RMSE_test = np.sqrt(mean_squared_error(y_test, y_pred))
 
     if verbose: # print info on the fitted model
+        """ 
         print("Mean of the target variable:")
         print(y_train.mean())
         print("\nRMSE on training set:")
@@ -48,14 +49,17 @@ def run_linear_regression(learning_rate=0.01, alpha=1, penalty='l2', verbose=Fal
         print("\nRMSE on test set:")
         print(RMSE_test)
         """
+        
         print("\n*** LINEAR REGRESSION USING SGD AND L2-PEN")
-        print("\n*** Coefficient: ***\n")
-        print(lin_reg.coef_)
-        print("\n*** Intercept: ***\n")
-        print(lin_reg.intercept_)
         print("\n*** Features used in the model: ***\n")
         print(lin_reg.feature_names_in_)
-        """
+        print("\n*** Coefficient: ***\n")
+        print(lin_reg.coef_)
+        features = list(lin_reg.feature_names_in_)
+        coefs = list(lin_reg.coef_)
+        features = sorted(features, key=lambda item: coefs[features.index(item)], reverse=True)
+        print(features[:3])
+        
         """
         important note: why is feature_names_not showing all features?
         that is because the linear regressor trained using a L2 penalization!

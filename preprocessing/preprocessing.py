@@ -445,7 +445,7 @@ def split_data(X, y, test_size=0.2, random_state=42):
     y = np.ravel(y)
     if X.shape[0] != y.shape[0]:
         raise UnalignedDataFramesError
-    return train_test_split(X, y, test_size=test_size, random_state=random_state, stratify=X[""], shuffle=True)
+    return train_test_split(X, y, test_size=test_size, random_state=random_state, stratify=X["Room Type"], shuffle=True)
 
 
 # MAIN PREPROCESSING FUNCTION
@@ -535,9 +535,9 @@ def run_preprocessing(store_copy=False):
         # dump it into a csv for further investigation
         X_train.to_csv('X_train_processed.csv', header=True, columns=X_train.columns)
         X_test.to_csv('X_test_processed.csv', header=True, columns=X_test.columns)
-    
     return (X_train, y_train, X_test, y_test, df_identifiers)
 
 
 if __name__ == "__main__":
     (X_train, y_train, X_test, y_test, df_identifiers) = run_preprocessing(store_copy=True)
+    

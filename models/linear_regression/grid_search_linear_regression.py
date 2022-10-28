@@ -8,15 +8,15 @@ import sklearn
 from sklearn.metrics import mean_squared_error
 from linear_regression import run_linear_regression
 
-def run_grid_search_linear_regression(learning_rate=0.01, alpha=1, penalty='l1', verbose=False):
+def run_grid_search_linear_regression(penalty='l2', verbose=True):
     """
     Fit a linear regression model (with intercept) on training data and apply it on the test data.
     Print RMSE.
     """
 
     # define the parameters of the grid
-    learning_rates = [0.0001] #np.logspace(-5, 1, 10)
-    alphas = np.logspace(-7, -3, 5)
+    learning_rates = [1e-3] #np.logspace(-5, -1, 5)
+    alphas = [1e-6] #np.logspace(-7, -3, 5)
 
     SCORES = {}
     best_learning_rate=None
@@ -32,7 +32,8 @@ def run_grid_search_linear_regression(learning_rate=0.01, alpha=1, penalty='l1',
             (_, RMSE_test) = run_linear_regression(
                 learning_rate=learning_rate,
                 alpha=alpha,
-                penalty=penalty
+                penalty=penalty,
+                verbose=True
             )
             print("RMSE on test:", RMSE_test, "\n")
             if RMSE_test < best_RMSE_test:

@@ -13,10 +13,3 @@ mkdir projet_ML_Conti_Basler_Akanati_Boulay
 cd projet_ML_Conti_Basler_Akanati_Boulay
 git clone https://gitlab-student.centralesupelec.fr/clement.boulay/projetapprauto.git
 ```
-
-## Pour faire tourner le projet en local
-Commencer par créer un nouvel environnement virtuel :
-TODO
-
-## Roadmap
-TODO
