@@ -25,8 +25,6 @@ solver = 'adam'
 alpha_regularization = 1e-5
 max_iteration = 10000
 learning_rate = 0.001
-cv = ShuffleSplit(n_splits=50, test_size=0.2, random_state=0)
-train_sizes=np.linspace(0.1, 1.0, 5)
 
 #hidden_layer_sizes = (nb_feature, 256, 128, 64, 16, 1) # TrainL = 0.49, TestL = 0.29
 #hidden_layer_sizes = (nb_feature, 256, 64, 16, 1) # TrainL = 0.44, TestL = 0.31
@@ -58,13 +56,7 @@ clf = GridSearchCV(regressor, parameters, scoring="neg_root_mean_squared_error",
 clf.fit(X_train, y_train)
 print("Résultats de l'optimisation = ", clf.cv_results_)
 print("Score de test = ", clf.score(X_test, y_test))
-#train_sizes, train_scores, test_scores, _, _ = learning_curve(regressor, X_train, y_train, cv=cv, train_sizes=train_sizes)
 
-#regressor.fit(X_train, y_train)
-
-#print("Loss d'entrainement = ", regressor.score(X_train, y_train))
-#print("Loss de validation = ", regressor.score(X_val, y_val))
-#print("Loss de test = ", regressor.score(X_test, y_test))
 
 plt.hist(clf.predict(X_test), bins=100, density=True, alpha=0.5)
 plt.hist(y_test, bins=100, density=True, alpha=0.5)
