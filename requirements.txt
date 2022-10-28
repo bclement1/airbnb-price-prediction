@@ -1,20 +1,6 @@
-# Python ≥3.5 is required
-import sys
-assert sys.version_info >= (3, 5)
-
-# Scikit-Learn ≥0.20 is required
-import sklearn
-assert sklearn.__version__ >= "0.20"
-
-# Numpy arrays are used to store training and test data.
-import numpy as np
-
-# Pandas is used to manipulate tabular data.
-import pandas as 
-
-# Ignore useless warnings (see SciPy issue #5998).
-import warnings
-warnings.filterwarnings(action="ignore", message="^internal gelsd")
-
-def load_data():
-    
+GitPython==3.1.29
+matplotlib==3.5.2
+matplotlib-inline==0.1.3
+numpy==1.22.3
+scikit-learn>=0.20
+seaborn==0.11.2
