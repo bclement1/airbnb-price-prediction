@@ -1,15 +1,21 @@
-# -*- coding: utf-8 -*-
+#############################################################################
+#############################################################################
+#############################################################################
 """
-Created on Tue Oct 18 09:35:12 2022
+                                ML Projet
+3A Centrale Supelec
+Date : 18/10/2022
+Author : Tristan BASLER
+Description :
+    Using XGBOOST model to predict price for an AirBnB appartement
+                                                                          """
+#############################################################################
+#############################################################################
+#############################################################################
 
-@author: trisr
-"""
-
+# Importation
 import sys
-
-sys.path.insert(0, "../")
-
-
+sys.path.insert(0, "../") # To insert the package on the path
 import numpy as np
 import os
 import datetime
@@ -18,21 +24,25 @@ from sklearn.metrics import mean_squared_error
 import xgboost as xg
 from Tree_Method.utils import writing_description
 
-
+# Params definition
 FILL_NA_METHOD = None
 ENCODER_METHOD = "LabelEncoder"
 DATEITME_TREATMENT = 'Linearization'
 
-## xgboost
+# Save Folder initialization
+save_file_path = "../logs/xgboost/{}/".format(
+    datetime.datetime.today().strftime("%Y-%m-%d_%H-%M-%S")
+)
+os.makedirs(save_file_path, exist_ok=True)
 
-## Preprocessing
+# Preprocessing
 data = preprocess.load_data()
 (X_train, y_train, X_test, y_test, df_identifiers) = preprocess.preprocessing(data,
                                                                               encoder_method = ENCODER_METHOD,
                                                                               fill_na_method = FILL_NA_METHOD,
                                                                               datetime_treatment = DATEITME_TREATMENT)
 
-## Learning
+# Learning
 
 model = xg.XGBRegressor(
     learning_rate=0.001,
@@ -61,13 +71,7 @@ print("Root Mean Squared Error is: ", np.sqrt(mean_squared_error(y_test, yhat)))
 # model_xgb_2.load_model("model.json")
 
 ## Saving and Metrics
-
-save_file_path = "../logs/xgboost/{}/".format(
-    datetime.datetime.today().strftime("%Y-%m-%d_%H-%M-%S")
-)
-os.makedirs(save_file_path, exist_ok=True)
 model.save_model(save_file_path + "/model.json")
-
 
 description = {}
 description["Date"] = datetime.datetime.today().strftime("%Y-%m-%d_%H-%M-%S")
