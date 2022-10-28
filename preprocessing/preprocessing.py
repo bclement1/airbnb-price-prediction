@@ -254,51 +254,54 @@ def extract_target(df: pd.DataFrame, test_size=0.2, random_state=42):
     return (X, y)
 
 
-def fill_na_mean(X: pd.DataFrame):
+def fill_na_mean(X_train: pd.DataFrame, X_test: pd.DataFrame):
     """
     Desc.
     """
     for col in NUMERICAL_FEATURES:
         try:
-            mean = X[col].mean()
+            mean = X_train[col].mean()
         except TypeError: # column is encoded using strings
-            mean = np.mean(X[col].apply(lambda x: float(x)))
-        X[col] = X[col].apply(lambda x: mean if(pd.isna(x)) else x)
-    return X
+            mean = np.mean(X_train[col].apply(lambda x: float(x)))
+        X_train[col] = X_train[col].apply(lambda x: mean if(pd.isna(x)) else x)
+        X_test[col] = X_test[col].apply(lambda x: mean if(pd.isna(x)) else x)
+    return X_train, X_test
 
 
-def fill_na_median(X: pd.DataFrame):
+def fill_na_median(X_train: pd.DataFrame, X_test: pd.DataFrame):
     """
     Desc.
     """
     for col in NUMERICAL_FEATURES:
         try:
-            med = X[col].median()
+            med = X_train[col].median()
         except TypeError: # column is encoded using strings
-            med = np.median(X[col].apply(lambda x: float(x)))
-        X[col].apply(lambda x: med if(pd.isna(x)) else x)
-    return X
+            med = np.median(X_train[col].apply(lambda x: float(x)))
+        X_train[col].apply(lambda x: med if(pd.isna(x)) else x)
+        X_test[col].apply(lambda x: med if(pd.isna(x)) else x)
+    return X_train, X_test
 
 
-def fill_categorical_features(X: pd.DataFrame):
+def fill_categorical_features(X_train: pd.DataFrame, X_test: pd.DataFrame):
     """
     Desc.
     """
     for col in CATEGORICAL_COLUMNS:
         # apply custom treatments depending on columns
         # TO DO
-        most_frequent_value = X[col].mode()[0]
-        X[col] = X[col].apply(lambda x: most_frequent_value if pd.isna(x) else x)
+        most_frequent_value = X_train[col].mode()[0]
+        X_train[col] = X_train[col].apply(lambda x: most_frequent_value if pd.isna(x) else x)
+        X_test[col] = X_test[col].apply(lambda x: most_frequent_value if pd.isna(x) else x)
     """
     for col in HYBRID_FEATURES:
         most_frequent_value = X[col].mode()[0]
         X[col] = X[col].apply(lambda x: most_frequent_value if pd.isna(x) else x)
     """
 
-    return X
+    return X_train, X_test
 
 
-def scale_numerical_features(X: pd.DataFrame, method="minmax"):
+def scale_numerical_features(X_train: pd.DataFrame, X_test: pd.DataFrame, method="minmax"):
     """
     Desc.
     """
@@ -311,9 +314,9 @@ def scale_numerical_features(X: pd.DataFrame, method="minmax"):
         scaler = MinMaxScaler()
 
     # scale the features
-    X[NUMERICAL_FEATURES] = scaler.fit_transform(X[NUMERICAL_FEATURES])
-
-    return X
+    X_train[NUMERICAL_FEATURES] = scaler.fit_transform(X_train[NUMERICAL_FEATURES])
+    X_test[NUMERICAL_FEATURES] = scaler.transform(X_test[NUMERICAL_FEATURES])
+    return X_train, X_test
 
 def apply_one_hot_encoding(X: pd.DataFrame, full=False):
     """
@@ -442,7 +445,7 @@ def split_data(X, y, test_size=0.2, random_state=42):
     y = np.ravel(y)
     if X.shape[0] != y.shape[0]:
         raise UnalignedDataFramesError
-    return train_test_split(X, y, test_size=test_size, random_state=random_state)
+    return train_test_split(X, y, test_size=test_size, random_state=random_state, stratify=X[""], shuffle=True)
 
 
 # MAIN PREPROCESSING FUNCTION
@@ -477,40 +480,46 @@ def preprocessing(df: pd.DataFrame,
     # extract the target variable from the data
     X, y = extract_target(data)
 
+    # now, we split the features and target into a training and a test set
+    (X_train, X_test, y_train, y_test) = split_data(X, y)
+
     # at this step, we fill the missing values in the features. 2 strategies are allowed
     if fill_na_method not in ["mean", "median"]:
         raise UnknownFillMethodError
     elif fill_na_method == "mean":
-        X = fill_na_mean(X)
+        X_train, X_test = fill_na_mean(X_train, X_test)
     elif fill_na_method == "median":
-        X = fill_na_median(X)
+        X_train, X_test = fill_na_median(X_train, X_test)
 
     # replace NaN values for the categorical columns too, using the majority value
-    X = fill_categorical_features(X)
+    X_train, X_test = fill_categorical_features(X_train, X_test)
 
     # scale numerical features
-    X = scale_numerical_features(X)
+    X_train, X_test = scale_numerical_features(X_train, X_test)
     
     # now, we apply encoding to the categorical features
     if encoder_method not in ["classical", "FullLabelEncoder", "FullOneHotEncoder"]:
         raise UnknownEncodingMethodError
     elif encoder_method == "classical":
-        X = apply_one_hot_encoding(X, full=False)
-        X = apply_label_encoding(X, full=False)
+        X_train = apply_one_hot_encoding(X_train, full=False)
+        X_train = apply_label_encoding(X_train, full=False)
+        X_test = apply_one_hot_encoding(X_test, full=False)
+        X_test = apply_label_encoding(X_test, full=False)
     # WARNING: do not use the following two if you do not know what you are doing, use the default value instead
     elif encoder_method == "FullOneHotEncoder": # WARNING: be very careful when we use the following
-        X = apply_one_hot_encoding(X, full=True)
+        X_train = apply_one_hot_encoding(X_train, full=True)
+        X_test = apply_one_hot_encoding(X_test, full=True)
     elif encoder_method == "FullLabelEncoder": # WARNING: be very careful when we use the following
-        X = apply_label_encoding(X, full=True, use_sklearn=True)
+        X_train = apply_label_encoding(X_train, full=True, use_sklearn=True)
+        X_test = apply_label_encoding(X_test, full=True, use_sklearn=True)
     
     # last, encode the boolean features using a binary map
-    X = encode_boolean_features(X)
+    X_train = encode_boolean_features(X_train)
+    X_test = encode_boolean_features(X_test)
 
     # ensure all numerical columns are of type float
-    X = ensure_numerical_columns_type(X)
-
-    # last, we split the features and target into a training and a test set
-    (X_train, X_test, y_train, y_test) = split_data(X, y)
+    X_train = ensure_numerical_columns_type(X_train)
+    X_test = ensure_numerical_columns_type(X_test)
 
     return (X_train, y_train, X_test, y_test, df_identifiers)
 
@@ -525,6 +534,7 @@ def run_preprocessing(store_copy=False):
     if store_copy:
         # dump it into a csv for further investigation
         X_train.to_csv('X_train_processed.csv', header=True, columns=X_train.columns)
+        X_test.to_csv('X_test_processed.csv', header=True, columns=X_test.columns)
     
     return (X_train, y_train, X_test, y_test, df_identifiers)
 
