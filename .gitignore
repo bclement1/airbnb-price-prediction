@@ -139,5 +139,6 @@ cython_debug/
 
 # Custom folder
 data/
+*.csv
 
 # End of https://mrkandreev.name/snippets/gitignore-generator/#Python
