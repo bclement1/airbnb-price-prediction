@@ -37,5 +37,15 @@ Enfin, installer les dépendances du projet dans l'environnement précédent :
 pip install -r requirements.txt
 ```
 
+Il ne reste plus qu'à télécharger les données. Commencer par créer un dossier `data/` :
+
+```
+mkdir data/
+```
+
+Ensuite, rendez-vous sur le site Kaggle pour télécharger le jeu de données qui se trouve à l'adresse suivante :
+`https://www.kaggle.com/datasets/gauravduttakiit/airbnb-berlin-price-prediction`. Il faut enregistrer le fichier `.csv` dans le dossier `data/`.
+
+
 Vous êtes prêt(e) à utiliser le projet !
 
